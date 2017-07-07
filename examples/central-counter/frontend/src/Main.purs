@@ -30,9 +30,12 @@ import Data.Foldable (foldr, fold)
 import Data.List (List(Nil, Cons))
 import Data.Tuple (Tuple(Tuple))
 import Network.HTTP.Affjax (AJAX, get)
-import Pux (renderToDOM, fromSimple, start, EffModel, noEffects)
-import Pux.Html (Html, text, button, span, div, p)
-import Pux.Html.Events (onClick)
+import Pux (start, EffModel, noEffects)
+import Pux.Renderer.React (renderToDOM)
+import Text.Smolder.HTML (button, div, span, p)
+import Text.Smolder.Markup (text, (#!))
+import Pux.DOM.HTML (HTML)
+import Pux.DOM.Events (onClick)
 import Servant.Subscriber (Subscriber, makeSubscriber, SubscriberEff, Config, makeSubscriptions)
 import Servant.Subscriber.Request (HttpRequest(..))
 import Servant.Subscriber.Types (Path(Path))
@@ -41,6 +44,7 @@ import Signal.Channel (Channel, subscribe, send, channel, CHANNEL)
 import Unsafe.Coerce (unsafeCoerce)
 import WebSocket (WEBSOCKET)
 
+--import DeckGL
 
 data Action = Increment
             | Decrement
@@ -58,8 +62,6 @@ type State = {
 
 type MySettings = SPSettings_ SPParams_
 
-
-
 type APIEffect eff = ReaderT MySettings (ExceptT AjaxError (Aff ( ajax :: AJAX, channel :: CHANNEL, err :: EXCEPTION  | eff)))
 
 type ServantModel =
@@ -67,36 +69,38 @@ type ServantModel =
     , effects :: Array (APIEffect () Action)
     }
 
-
-update :: Action -> State -> EffModel State Action (ajax :: AJAX)
-update Increment state = runEffectActions state [Update <$> putCounter (CounterAdd 1)]
-update Decrement state = runEffectActions state [Update <$> putCounter (CounterAdd (-1))]
+update :: Partial => Action -> State -> EffModel State Action (ajax :: AJAX)
+--update Increment state = runEffectActions state [Update <$> putCounter (CounterAdd 1)]
+--update Decrement state = runEffectActions state [Update <$> putCounter (CounterAdd (-1))]
 update (Update val) state  = { state : state { counter = val }, effects : []}
 update (ReportError err ) state = { state : state { lastError = Just err}, effects : []}
 update (SubscriberLog msg) state = { state : state { subscriberLog = Cons msg state.subscriberLog}, effects : []}
 update Nop state = noEffects state
 
-view :: State -> Html Action
-view state =
-  div []
-    [ div
-        []
-        [ button [ onClick (const Increment) ] [ text "+" ]
-        , span [] [ text (show state.counter) ]
-        , button [ onClick (const Decrement) ] [ text "-" ]
-        ]
-    , div []
-        [ span [] [ text $ "Error: " <> maybe "Nothing" errorToString state.lastError ]
-        , div  []
-            [ text $ "Subscriber Log: "
-            , div []
-                (foldr Array.cons [] <<< map (\l -> p [] [ text l ]) $ state.subscriberLog)
-            ]
-        ]
-    ]
+foldp :: forall fx. Action -> State -> EffModel State Action fx
+foldp Increment state = { state: state { counter = state.counter + 1 }, effects: [] }
+foldp Decrement state = { state: state { counter = state.counter - 1 }, effects: [] }
+foldp (Update val) state  = { state : state { counter = val }, effects : []}
+foldp (ReportError err ) state = { state : state { lastError = Just err}, effects : []}
+foldp (SubscriberLog msg) state = { state : state { subscriberLog = Cons msg state.subscriberLog}, effects : []}
+foldp Nop state = noEffects state
 
-runEffectActions :: State -> Array (APIEffect () Action) -> EffModel State Action (ajax :: AJAX)
-runEffectActions state effects = { state : state, effects : map (runEffect state.settings) effects }
+view :: State -> HTML Action 
+view state =
+  div do 
+    div do
+        button #! onClick (const Increment) $ text "+"
+        span   $  text    (show state.counter) 
+        button #! onClick (const Decrement) $ text "-" 
+    div do 
+        span   $ text $ "Error: " <> maybe "Nothing" errorToString state.lastError 
+        div do
+            text $ "The subscriber Log: "
+            --div do
+            --    (foldr Array.cons [] <<< map (\l -> p $ text l) $ state.subscriberLog)
+
+-- runEffectActions :: State -> Array (APIEffect () Action) -> EffModel State Action (ajax :: AJAX)
+--runEffectActions state effects = { state : state, effects : map (runEffect state.settings) effects }
 
 runEffect :: MySettings -> APIEffect () Action -> Aff (channel :: CHANNEL, ajax :: AJAX, err :: EXCEPTION) Action
 runEffect settings m = do
@@ -109,7 +113,6 @@ type SubscriberData eff = {
   subscriber :: Subscriber eff Action
 , messages :: Signal Action
 }
-
 
 initSubscriber :: forall eff. MySettings -> SubscriberEff (channel :: CHANNEL | eff) (SubscriberData (channel :: CHANNEL | eff))
 initSubscriber settings = do
@@ -133,7 +136,6 @@ initSubscriber settings = do
   pure $ { subscriber : sub, messages : sig }
 
 
--- main :: forall e. Eff (ajax :: AJAX, err :: EXCEPTION, channel :: CHANNEL | e) Unit
 main :: forall eff. Eff (ajax :: AJAX, err :: EXCEPTION, channel :: CHANNEL, ref :: REF, ws :: WEBSOCKET | eff) Unit
 main = do
   let settings = SPSettings_ {
@@ -149,13 +151,13 @@ main = do
   sub <- initSubscriber settings
   app <- coerceEffects <<< start $
     { initialState: initState
-    , update: update
+    , foldp: foldp
+--  , update: update
     , view: view
     , inputs: [sub.messages]
-    --, inputs : []
     }
 
-  renderToDOM "#app" app.html
+  renderToDOM "#app" app.markup app.input
 
 coerceEffects :: forall eff0 eff1 a. Eff eff0 a -> Eff eff1 a
 coerceEffects = unsafeCoerce
