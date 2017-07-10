@@ -54,7 +54,7 @@ data DefaultBridge
 
 -- | 'languageBridge' for 'DefaultBridge' evaluates to 'buildBridge' 'defaultBridge' - no surprise there.
 instance HasBridge DefaultBridge where
-  languageBridge _ = buildBridge defaultBridge
+  languageBridge _ = buildBridge defaultBridge PSv011
 
 -- | A proxy for 'DefaultBridge'
 defaultBridgeProxy :: Proxy DefaultBridge
@@ -119,7 +119,7 @@ baseURLId :: ParamName
 baseURLId = "baseURL"
 
 baseURLParam :: PSParam
-baseURLParam = Param baseURLId psString
+baseURLParam = Param baseURLId (psString PSv011)
 
 subscriberToUserId :: ParamName
 subscriberToUserId = "spToUser_"

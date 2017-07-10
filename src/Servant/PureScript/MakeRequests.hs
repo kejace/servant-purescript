@@ -17,6 +17,7 @@ import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import qualified Data.Text.Encoding                 as T
 import           Language.PureScript.Bridge         (ImportLine (..),
+                                                     PSVersion(..),
                                                      PSType,
                                                      buildBridge,
                                                      defaultBridge,
@@ -156,6 +157,6 @@ genBuildHeader (ReplaceHeaderArg _ _) = error "ReplaceHeaderArg - not yet implem
 psHttpRequest :: PSType
 psHttpRequest = let
     haskType' = mkTypeInfo (Proxy :: Proxy HttpRequest)
-    bridge = buildBridge defaultBridge
+    bridge = buildBridge defaultBridge PSv011
  in
     bridge haskType'

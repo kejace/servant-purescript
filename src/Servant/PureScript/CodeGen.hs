@@ -178,7 +178,7 @@ reqToPSTypes req = map _pType (reqToParams req) ++ maybeToList (req ^. reqReturn
 
 -- | Extract all function parameters from a given Req.
 reqToParams :: Req PSType -> [Param PSType]
-reqToParams req = Param baseURLId psString
+reqToParams req = Param baseURLId (psString PSv011)
                : fmap headerArgToParam (req ^. reqHeaders)
                ++ maybeToList (reqBodyToParam (req ^. reqBody))
                ++ urlToParams (req ^. reqUrl)

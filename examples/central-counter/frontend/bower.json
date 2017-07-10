@@ -12,15 +12,15 @@
     "purescript-affjax": "^4.0.0",
     "purescript-aff": "^3.1.0",
     "purescript-argonaut-generic-codecs": "^6.0.0",
-    "purescript-servant-support": "https://github.com/eskimor/purescript-servant-support.git",
+    "purescript-servant-support": "https://github.com/eskimor/purescript-servant-support.git#master",
     "purescript-var": "https://github.com/zudov/purescript-var.git",
-    "purescript-subscriber": "https://github.com/kejace/purescript-subscriber.git",
+    "purescript-subscriber": "https://github.com/kejace/purescript-subscriber.git#master",
     "purescript-generics": "^4.0.0",
     "purescript-partial": "^1.2.1",
     "purescript-dom": "^4.5.0",
     "purescript-profunctor-lenses": "^3.2.0",
-    "purescript-pux-deck.gl": "https://github.com/kejace/purescript-pux-deck.gl.git",
-    "purescript-web3": "https://github.com/martyall/purescript-web3.git"
+    "purescript-pux-deck.gl": "https://github.com/kejace/purescript-pux-deck.gl.git#master",
+    "purescript-web3": "https://github.com/kejace/purescript-web3.git#master"
   },
   "resolutions": {
     "purescript-console": "^3.0.0",
